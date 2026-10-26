@@ -1,0 +1,35 @@
+# Cartelle di build
+/cmake-build-*/
+/build/
+/out/
+/roms/
+/SDL3/
+/gb-test-roms
+
+
+# File generati da CMake e Ninja
+CMakeCache.txt
+CMakeFiles/
+Makefile
+compile_commands.json
+.ninja_deps
+.ninja_log
+build.ninja
+cmake_install.cmake
+
+# File binari e di debug
+*.exe
+*.pdb
+*.ilk
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+
+# Cartelle di configurazione dell'IDE
+.idea/
+# Salvataggi e ROM 
+*.sav
+*.gb
+*.gbc

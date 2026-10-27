@@ -1,5 +1,16 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.24)
 project(emuGB2 C)
+
+include(FetchContent)
+FetchContent_Declare(
+        SDL3
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+        GIT_TAG        release-3.4.16
+        FIND_PACKAGE_ARGS 3 CONFIG
+)
+set(SDL_STATIC ON CACHE BOOL "" FORCE)
+set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(SDL3)
 
 set(CMAKE_C_STANDARD 99)
 add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
@@ -11,14 +22,13 @@ add_executable(emuGB2
         sources/src/helper.c
         sources/src/ppu.c
         sources/src/apu.c
-        sources/headers/utils.h
         sources/src/utils.c
 )
 
-# Aggancia gli header del tuo emulatore
 target_include_directories(emuGB2 PRIVATE ${CMAKE_SOURCE_DIR}/sources/headers)
+target_link_libraries(emuGB2 PRIVATE SDL3::SDL3)
 
-# Aggancia gli header e le librerie statiche di SDL3 in modo esplicito
-target_include_directories(emuGB2 PRIVATE ${CMAKE_SOURCE_DIR}/SDL3/include)
-target_link_directories(emuGB2 PRIVATE ${CMAKE_SOURCE_DIR}/SDL3/lib/x64)
-target_link_libraries(emuGB2 PRIVATE SDL3)
+# copia gli assets accanto all'eseguibile
+add_custom_command(TARGET emuGB2 POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:emuGB2>/assets)

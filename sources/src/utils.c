@@ -29,3 +29,52 @@ void DrawGlowingCircle(SDL_Renderer* renderer, float center_x, float center_y, f
         }
     }
 }
+// SETTA I TASTI QUI
+void set_key(gameBoy* gb, SDL_Keycode key, int pressed) {
+    switch (key) {
+    case SDLK_W: //up
+        if (pressed) gb->cross_key &= ~(1 << 2);
+        else         gb->cross_key |= (1 << 2);
+        break;
+    case SDLK_S: //Down
+        if (pressed) gb->cross_key &= ~(1 << 3);
+        else         gb->cross_key |= (1 << 3);
+        break;
+    case SDLK_A: //right
+        if (pressed) gb->cross_key &= ~(1 << 1);
+        else         gb->cross_key |= (1 << 1);
+        break;
+    case SDLK_D: //left
+        if (pressed) gb->cross_key &= ~1;
+        else         gb->cross_key |= 1;
+        break;
+    case SDLK_F: //button A
+        if (pressed)gb->buttons &= ~1;
+        else gb->buttons |= 1;
+        break;
+    case SDLK_G: // button b
+        if (pressed)gb->buttons &= ~(1 << 1);
+        else gb->buttons |= (1 << 1);
+        break;
+    case SDLK_R: // start
+        if (pressed)gb->buttons &= ~(1 << 3);
+        else  gb->buttons |= (1 << 3);
+        break;
+    case SDLK_T: // select
+        if (pressed)gb->buttons &= ~(1 << 2);
+        else  gb->buttons |= (1 << 2);
+        break;
+    default:
+        ;
+    }
+}
+
+void poll_events(gameBoy* gb, int* running, SDL_Window* window) {
+    SDL_Event e;
+    while (SDL_PollEvent(&e)) {
+        if (e.type == SDL_EVENT_QUIT) *running = 0;
+        if (e.type == SDL_EVENT_KEY_DOWN) set_key(gb, e.key.key, 1);
+        if (e.type == SDL_EVENT_KEY_UP)   set_key(gb, e.key.key, 0);
+        if (e.type == SDL_EVENT_DROP_FILE) { /* e.drop.data = percorso */ }
+    }
+}

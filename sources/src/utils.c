@@ -4,21 +4,21 @@
 #include "utils.h"
 #include "math.h"
 
-// Funzione per disegnare un cerchio pieno in SDL3
-// Funzione per disegnare un LED con gradiente luminoso
+// Function to draw a filled circle in SDL3
+// Function to draw a LED with a light gradient
 void DrawGlowingCircle(SDL_Renderer* renderer, float center_x, float center_y, float radius) {
     for (float w = 0; w < radius * 2; w++) {
         for (float h = 0; h < radius * 2; h++) {
             float dx = radius - w;
             float dy = radius - h;
-            float distance = sqrt(dx * dx + dy * dy); // Teorema di Pitagora per la distanza
+            float distance = sqrt(dx * dx + dy * dy); // Pythagorean theorem for the distance
 
             if (distance <= radius) {
-                // L'intensità va da 1.0 (esattamente al centro) a 0.0 (sul bordo estremo)
+                // Intensity goes from 1.0 (exactly at the center) to 0.0 (on the outer edge)
                 float intensity = 1.0f - (distance / radius);
 
-                // Centro (intensity = 1.0): R=255, G=150, B=150 (Rosso chiarissimo/Rosato)
-                // Bordo (intensity = 0.0): R=100, G=0, B=0 (Rosso scuro)
+                // Center (intensity = 1.0): R=255, G=150, B=150 (Very light red/Pinkish)
+                // Edge (intensity = 0.0): R=100, G=0, B=0 (Dark red)
                 uint8_t r = (uint8_t)(150 + (105 * intensity));
                 uint8_t g = (uint8_t)(220 * intensity);
                 uint8_t b = (uint8_t)(220 * intensity);
@@ -29,7 +29,7 @@ void DrawGlowingCircle(SDL_Renderer* renderer, float center_x, float center_y, f
         }
     }
 }
-// SETTA I TASTI QUI
+// SET KEYS HERE
 void set_key(gameBoy* gb, SDL_Keycode key, int pressed) {
     switch (key) {
     case SDLK_W: //up
@@ -75,6 +75,6 @@ void poll_events(gameBoy* gb, int* running, SDL_Window* window) {
         if (e.type == SDL_EVENT_QUIT) *running = 0;
         if (e.type == SDL_EVENT_KEY_DOWN) set_key(gb, e.key.key, 1);
         if (e.type == SDL_EVENT_KEY_UP)   set_key(gb, e.key.key, 0);
-        if (e.type == SDL_EVENT_DROP_FILE) { /* e.drop.data = percorso */ }
+        if (e.type == SDL_EVENT_DROP_FILE) { /* e.drop.data = path */ }
     }
 }

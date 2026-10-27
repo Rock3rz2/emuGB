@@ -11,51 +11,51 @@ void apu_init(gameBoy* gb) {
 void update_apu(gameBoy* gb, int cycles) {
     gb->apu.audio_cycles += cycles;
 
-    // --- Aggiornamento Onda Canale 1 ---
+    // --- Update Channel 1 Wave ---
     gb->apu.ch1_timer -= cycles;
     while (gb->apu.ch1_timer <= 0) {
         gb->apu.ch1_timer += (2048 - gb->apu.ch1_frequency) * 4;
         gb->apu.ch1_wave_step = (gb->apu.ch1_wave_step + 1) % 8;
     }
 
-    // --- Aggiornamento Onda Canale 2 ---
+    // --- Update Channel 2 Wave ---
     gb->apu.ch2_timer -= cycles;
     while (gb->apu.ch2_timer <= 0) {
         gb->apu.ch2_timer += (2048 - gb->apu.ch2_frequency) * 4;
         gb->apu.ch2_wave_step = (gb->apu.ch2_wave_step + 1) % 8;
     }
 
-    // --- Aggiornamento Onda Canale 3 ---
+    // --- Update Channel 3 Wave ---
     gb->apu.ch3_timer -= cycles;
     while (gb->apu.ch3_timer <= 0) {
         gb->apu.ch3_timer += (2048 - gb->apu.ch3_frequency) * 2;
         gb->apu.ch3_wave_step = (gb->apu.ch3_wave_step + 1) % 32;
     }
 
-    // --- Aggiornamento Onda Canale 4 (LFSR Rumore) ---
+    // --- Update Channel 4 Wave (LFSR Noise) ---
     gb->apu.ch4_timer -= cycles;
     while (gb->apu.ch4_timer <= 0) {
         const int divisor_table[8] = {8, 16, 32, 48, 64, 80, 96, 112};
         int divisor = divisor_table[gb->apu.ch4_divisor_code];
         gb->apu.ch4_timer += divisor << gb->apu.ch4_clock_shift;
 
-        // XOR tra il bit 0 e il bit 1 dell'LFSR
+        // XOR between bit 0 and bit 1 of the LFSR
         uint8_t xor_bit = (gb->apu.ch4_lfsr & 0x01) ^ ((gb->apu.ch4_lfsr & 0x02) >> 1);
 
-        // Scorriamo tutto a destra di 1
+        // Shift everything to the right by 1
         gb->apu.ch4_lfsr >>= 1;
 
-        // Inseriamo il risultato dello XOR al bit 14
+        // Insert the XOR result into bit 14
         gb->apu.ch4_lfsr |= (xor_bit << 14);
 
-        // Se la modalità è "corta" (7 bit, suono più metallico), inseriamo lo XOR anche al bit 6
+        // If mode is "short" (7 bits, more metallic sound), also insert the XOR at bit 6
         if (gb->apu.ch4_width_mode) {
-            gb->apu.ch4_lfsr &= ~(1 << 6);      // Prima azzeriamo il bit 6
-            gb->apu.ch4_lfsr |= (xor_bit << 6); // Poi ci scriviamo lo xor_bit
+            gb->apu.ch4_lfsr &= ~(1 << 6);      // First clear bit 6
+            gb->apu.ch4_lfsr |= (xor_bit << 6); // Then write xor_bit
         }
     }
 
-    // --- Campionamento Audio ---
+    // --- Audio Sampling ---
     gb->apu.sampling_timer -= (float)cycles;
     if (gb->apu.sampling_timer <= 0) {
         gb->apu.sampling_timer += 87.3813f;
@@ -64,9 +64,9 @@ void update_apu(gameBoy* gb, int cycles) {
         float ch2 = get_channel2_sample(gb);
         float ch3 = get_channel3_sample(gb);
         float ch4 = get_channel4_sample(gb);
-        // Il ch4 lo aggiungeremo al mix nel prossimo passaggio!
+        // We will add ch4 to the mix in the next step!
 
-        // Mix dei canali con volume master abbassato per evitare distorsioni
+        // Mix channels with master volume lowered to avoid distortion
         float value = (ch1 + ch2 + ch3 + ch4) * 0.03f;
 
         gb->apu.buffer[gb->apu.buffer_index] = value;
@@ -79,7 +79,7 @@ void update_apu(gameBoy* gb, int cycles) {
         gb->apu.frame_sequencer_timer += 8192;
         gb->apu.frame_sequencer_step = (gb->apu.frame_sequencer_step + 1) % 8;
 
-        // 1. Length Timer (Scatta agli step 0, 2, 4, 6)
+        // 1. Length Timer (Triggers at steps 0, 2, 4, 6)
         if (gb->apu.frame_sequencer_step % 2 == 0) {
             // Canale 1
             if (gb->apu.ch1_length_enable == 1 && gb->apu.ch1_length_timer > 0) {
@@ -113,7 +113,7 @@ void update_apu(gameBoy* gb, int cycles) {
             }
         }
 
-        // 2. Hardware Sweep Canale 1 (Scatta agli step 2 e 6)
+        // 2. Hardware Sweep Channel 1 (Triggers at steps 2 and 6)
         if (gb->apu.frame_sequencer_step == 2 || gb->apu.frame_sequencer_step == 6) {
             if (gb->apu.ch1_sweep_enabled && gb->apu.ch1_sweep_period > 0) {
                 gb->apu.ch1_sweep_timer--;
@@ -139,7 +139,7 @@ void update_apu(gameBoy* gb, int cycles) {
             }
         }
 
-        // 3. Inviluppo del volume (Scatta solo allo step 7)
+        // 3. Volume envelope (Triggers only at step 7)
         if (gb->apu.frame_sequencer_step == 7) {
             // Canale 1
             if (gb->apu.ch1_env_period > 0) {
@@ -185,7 +185,7 @@ uint8_t apu_read(gameBoy* gb, uint16_t addr) {
 }
 
 void apu_write(gameBoy* gb, uint16_t addr, uint8_t value) {
-    // Registro NR52 (Master Audio Control)
+    // Register NR52 (Master Audio Control)
     if (addr == 0xFF26) {
         gb->memory[addr] = (gb->memory[addr] & 0x7F) | (value & 0x80);
         return;
@@ -197,12 +197,12 @@ void apu_write(gameBoy* gb, uint16_t addr, uint8_t value) {
 
     gb->memory[addr] = value;
 
-    // --- Gestione Lunghezza Canale 2 (NR21) ---
+    // --- Channel 2 Length Management (NR21) ---
     if (addr == 0xFF16) {
         gb->apu.ch2_length_timer = 64 - (value & 0x3F);
     }
 
-    // --- Gestione Frequenza, Trigger e Interruttori Canale 2 (NR23 e NR24) ---
+    // --- Channel 2 Frequency, Trigger and Switch Management (NR23 and NR24) ---
     if (addr == 0xFF18 || addr == 0xFF19) {
         gb->apu.ch2_frequency = ((gb->memory[0xFF19] & 0x07) << 8) | gb->memory[0xFF18];
 
@@ -228,7 +228,7 @@ void apu_write(gameBoy* gb, uint16_t addr, uint8_t value) {
         }
     }
 
-    // --- Gestione Canale 1 (Sweep + Onda Quadra) ---
+    // --- Channel 1 Management (Sweep + Square Wave) ---
     if (addr == 0xFF11) {
         gb->apu.ch1_length_timer = 64 - (value & 0x3F);
     }
@@ -265,7 +265,7 @@ void apu_write(gameBoy* gb, uint16_t addr, uint8_t value) {
         }
     }
 
-    // --- Gestione Canale 3 (Wave RAM) ---
+    // --- Channel 3 Management (Wave RAM) ---
     if (addr == 0xFF1A) {
         if ((value & 0x80) == 0) {
             gb->apu.ch3_channel_enabled = 0;
@@ -298,19 +298,19 @@ void apu_write(gameBoy* gb, uint16_t addr, uint8_t value) {
         }
     }
 
-    // --- Gestione Canale 4 (Rumore) ---
+    // --- Channel 4 Management (Noise) ---
     if (addr == 0xFF20) {
-        // NR41: Lunghezza
+        // NR41: Length
         gb->apu.ch4_length_timer = 64 - (value & 0x3F);
     }
     else if (addr == 0xFF22) {
-        // NR43: Parametri del rumore
+        // NR43: Noise parameters
         gb->apu.ch4_clock_shift = value >> 4;
         gb->apu.ch4_width_mode = (value & 0x08) ? 1 : 0;
         gb->apu.ch4_divisor_code = value & 0x07;
     }
     else if (addr == 0xFF23) {
-        // NR44: Trigger e Length Enable
+        // NR44: Trigger and Length Enable
         gb->apu.ch4_length_enable = (value & 0x40) ? 1 : 0;
 
         if (value & 0x80) { // Trigger
@@ -320,14 +320,14 @@ void apu_write(gameBoy* gb, uint16_t addr, uint8_t value) {
                 gb->apu.ch4_length_timer = 64;
             }
 
-            // Inizializzazione Inviluppo (da NR42)
+            // Envelope initialization (from NR42)
             uint8_t env_byte = gb->memory[0xFF21];
             gb->apu.ch4_current_volume = (env_byte >> 4) & 0x0F;
             gb->apu.ch4_env_dir = (env_byte & 0x08) ? 1 : -1;
             gb->apu.ch4_env_period = env_byte & 0x07;
             gb->apu.ch4_env_timer = (gb->apu.ch4_env_period > 0) ? gb->apu.ch4_env_period : 8;
 
-            // Il LFSR si resetta a tutti 1
+            // The LFSR resets to all 1s
             gb->apu.ch4_lfsr = 0x7FFF;
 
             const int divisor_table[8] = {8, 16, 32, 48, 64, 80, 96, 112};
@@ -402,7 +402,7 @@ float get_channel4_sample(gameBoy* gb) {
     if (gb->apu.ch4_channel_enabled == 0) return 0.0f;
     if (gb->apu.ch4_current_volume == 0) return 0.0f;
 
-    // Il Game Boy usa il bit 0 dell'LFSR invertito per creare il suono
+    // The Game Boy uses bit 0 of the inverted LFSR to create the sound
     uint8_t wave = (gb->apu.ch4_lfsr & 0x01) ? 0 : 1;
 
     float wave_centered = (wave == 1) ? 1.0f : -1.0f;

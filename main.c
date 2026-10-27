@@ -9,18 +9,18 @@
 
 #define FRAME_NS 16742706ULL
 
-// FLAG: 1 = Rendender a realistic GB frame (eheh); 0 = just the screen, little bigger
+// FLAG: 1 = Render a realistic GB frame (eheh); 0 = just the screen, little bigger
 static int renderGB = 0;
 
 // FLAG: 0 = Use normal grey scale palette; 1; Use the classic green gb
 static int use_classic_color = 0;
 
-//Can't touch this (dan da da dan )
+// Can't touch this (dan da da dan )
 static int hasRom = 0;
 
 static char pending_rom[512] = "";
 static const SDL_DialogFileFilter rom_filters[] = { { "ROM Game Boy", "gb;gbc" } };
-static const SDL_FRect load_button = { 140.0f, 194.0f, 200.0f, 44.0f };  // finestra 480x432
+static const SDL_FRect load_button = { 140.0f, 194.0f, 200.0f, 44.0f };  // window 480x432
 
 static void SDLCALL on_rom_selected(void* userdata, const char* const* filelist, int filter) {
     if (filelist && filelist[0]) {      // NULL is error
@@ -29,7 +29,7 @@ static void SDLCALL on_rom_selected(void* userdata, const char* const* filelist,
 }
 
 int main(int argc, char* argv[]) {
-    // ---------- Inizializzazione Game Boy ----------
+    // ---------- Game Boy initialization ----------
     gameBoy gb;
     memset(&gb, 0, sizeof(gameBoy));
     cpu_init(&gb.cpu);
@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
     gb.buttons = 0x0F;
     gb.cross_key = 0x0F;
 
-    // ---------- SDL: finestra, renderer, texture ----------
+    // ---------- SDL: window, renderer, texture ----------
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 
     int win_width = renderGB ? 600 : 160 * 3;
@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
     float silence[1600] = {0};
     SDL_PutAudioStreamData(audio_stream, silence, sizeof(silence));
 
-    // ---------- Texture della scocca (opzionale) ----------
+    // ---------- Case texture (optional) ----------
     SDL_Texture* bg_texture = NULL;
 
     if (renderGB) {
@@ -84,21 +84,11 @@ int main(int argc, char* argv[]) {
             bg_texture = SDL_CreateTextureFromSurface(renderer, bg_surface);
             SDL_DestroySurface(bg_surface);
         } else {
-            printf("Attenzione: impossibile caricare gb.bmp. Errore: %s\n", SDL_GetError());
+            printf("Warning: unable to load gb.bmp. Error: %s\n", SDL_GetError());
         }
     }
-
-    // ---------- PLACEHOLDER CARICAMENTO ROM ----------
-    // METTI QUI il caricamento della ROM (file picker, drag & drop, argv[1]...).
-    // Quando la ROM e' caricata con successo, imposta: hasRom = 1;
-    // Per provare subito, puoi mettere temporaneamente:
-    //     load_rom(&gb, "percorso/della/rom.gb");
-    //     hasRom = 1;
-    // ---------------------------------------------------
-    //load_rom(&gb, "C:\\Users\\lerco\\Desktop\\emuGB2\\roms\\Pokemon red.gb");
-    //hasRom = 1;
-
-    // ---------- Ciclo principale ----------
+    
+    // ---------- Main loop ----------
     int running = 1;
     while (running) {
         if (pending_rom[0]) {
@@ -189,14 +179,14 @@ int main(int argc, char* argv[]) {
             SDL_RenderFillRect(renderer, &load_button);
 
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-            SDL_RenderDebugText(renderer, load_button.x + 60, load_button.y + 18, "Carica ROM");
+            SDL_RenderDebugText(renderer, load_button.x + 60, load_button.y + 18, "Load ROM");
 
             SDL_RenderPresent(renderer);
             SDL_Delay(10);
         }
     }
 
-    // ---------- Pulizia finale ----------
+    // ---------- Final cleanup ----------
     if (bg_texture) SDL_DestroyTexture(bg_texture);
     SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(renderer);

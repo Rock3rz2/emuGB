@@ -1045,7 +1045,7 @@ int cpu_step(gameBoy* gb, int* cycles_out) {
 int load_rom(gameBoy* gb, const char* path) {
 	FILE* file = fopen(path, "rb");
 	if (!file) {
-		printf("ERRORE DI LETTURA ROM\n");
+		printf("ROM READ ERROR\n");
 		return 1;
 	}
 
@@ -1057,7 +1057,7 @@ int load_rom(gameBoy* gb, const char* path) {
 
 	gb->rom_data = malloc(size);
 	if (!gb->rom_data) {
-		printf("ERRORE: allocazione memoria fallita\n");
+		printf("ERROR: memory allocation failed\n");
 		fclose(file);
 		return 1;
 	}
@@ -1070,14 +1070,14 @@ int load_rom(gameBoy* gb, const char* path) {
 	gb->cart_type = gb->rom_data[0x0147];
 	printf("Cartridge Type: 0x%02X\n", gb->cart_type);
 
-	// copia il primo banco (16KB) nella zona fissa 0x0000-0x3FFF
+	// copy the first bank (16KB) into the fixed area 0x0000-0x3FFF
 	memcpy(gb->memory, gb->rom_data, 0x4000);
 
-	// --- NUOVA PARTE: GESTIONE NOME E CARICAMENTO FILE .SAV ---
+	// --- NEW PART: NAME MANAGEMENT AND LOADING .SAV FILE ---
 	strncpy(gb->save_path, path, sizeof(gb->save_path) - 1);
 	char* dot = strrchr(gb->save_path, '.');
 	if (dot) {
-		strcpy(dot, ".sav"); // Sostituisce l'estensione
+		strcpy(dot, ".sav"); // Replaces the extension
 	}
 	else {
 		strcat(gb->save_path, ".sav");
@@ -1087,10 +1087,10 @@ int load_rom(gameBoy* gb, const char* path) {
 	if (sav_file) {
 		fread(gb->RAM, 1, sizeof(gb->RAM), sav_file);
 		fclose(sav_file);
-		printf("Salvataggio precedente caricato con successo!\n");
+		printf("Previous save loaded successfully!\n");
 	}
 	else {
-		printf("Nessun salvataggio trovato. Partenza da zero.\n");
+		printf("No save found. Starting from scratch.\n");
 	}
 	// -----------------------------------------------------------
 
@@ -1121,14 +1121,14 @@ void update_cycles(gameBoy* gb, int cycles)
 		case 0x03: threshold = 256;  break;
 		}
 
-		while (c->tima_counter >= threshold) {
+			while (c->tima_counter >= threshold) {
 			c->tima_counter -= threshold;
 
-			write8(gb, 0xFF05, read8(gb, 0xFF05) + 1);   // incrementa TIMA
+			write8(gb, 0xFF05, read8(gb, 0xFF05) + 1);   // increment TIMA
 
-			if (read8(gb, 0xFF05) == 0) {          // trabocco!
-				write8(gb, 0xFF05, read8(gb, 0xFF06));     // ricarica da TMA
-				write8(gb, 0xFF0F, read8(gb, 0xFF0F) | (1 << 2));    // accendi bit Timer in IF
+			if (read8(gb, 0xFF05) == 0) {          // overflow!
+				write8(gb, 0xFF05, read8(gb, 0xFF06));     // reload from TMA
+				write8(gb, 0xFF0F, read8(gb, 0xFF0F) | (1 << 2));    // turn on Timer bit in IF
 			}
 		}
 	}
@@ -1139,12 +1139,12 @@ int handle_interrupts(gameBoy* gb) {
 
 	uint8_t pending = read8(gb, 0xFF0F) & read8(gb, 0xFFFF);
 
-	// Qualsiasi interrupt in attesa sblocca la CPU dall'HALT
+	// Any pending interrupt unlocks the CPU from HALT
 	if (pending != 0) {
 		c->halted = 0;
 	}
 
-	// Se IME è 0 o non ci sono interrupt, interrompiamo qui
+	// If IME is 0 or there are no interrupts, stop here
 	if (c->ime == 0 || pending == 0) return 0;
 
 	for (int i = 0; i < 5; i++) {
@@ -1158,7 +1158,7 @@ int handle_interrupts(gameBoy* gb) {
 
 			c->pc = 0x0040 + (i * 8);
 
-			// Il dispatch di un interrupt richiede 20 cicli hardware
+			// Dispatching an interrupt takes 20 hardware cycles
 			return 20;
 		}
 	}
@@ -1171,7 +1171,7 @@ uint8_t read8(gameBoy* gb, uint16_t addr) {
 		return gb->rom_data[bank * 0x4000 + (addr - 0x4000)];
 	}
 
-	// GESTIONE LETTURA RAM ESTERNA (SRAM / RTC)
+	// EXTERNAL RAM READ MANAGEMENT (SRAM / RTC)
 	if (addr >= 0xA000 && addr <= 0xBFFF) {
 		if (gb->enabledRam == 0) {
 			return 0xFF;
@@ -1374,12 +1374,12 @@ void write8(gameBoy* gb, uint16_t addr, uint8_t value) {
 		}
 		return;
 	}
-	// GESTIONE SCRITTURA APU
+	// APU WRITE MANAGEMENT
 	if (addr >= 0xFF10 && addr <= 0xFF3F) {
 		apu_write(gb, addr, value);
 		return;
 	}
-	// 3. GESTIONE I/O E PPU
+	// 3. I/O AND PPU MANAGEMENT
 	if (addr == 0xFF00) { gb->memory[addr] = value & 0x30; return; }
 	if (addr == 0xFF04) { gb->memory[addr] = 0; gb->cpu.div_counter = 0; return; }
 	if (addr == 0xFF44) { gb->memory[addr] = 0; return; }
@@ -1401,9 +1401,9 @@ void save_ram(gameBoy* gb) {
 	if (f) {
 		fwrite(gb->RAM, 1, sizeof(gb->RAM), f);
 		fclose(f);
-		printf("Partita salvata in: %s\n", gb->save_path);
+		printf("Game saved to: %s\n", gb->save_path);
 	}
 	else {
-		printf("ERRORE: Impossibile creare il file di salvataggio!\n");
+		printf("ERROR: Unable to create save file!\n");
 	}
 }

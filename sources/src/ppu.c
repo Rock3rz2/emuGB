@@ -127,7 +127,7 @@ uint8_t get_tile_pixel_color(gameBoy* gb, uint16_t X, uint16_t Y) {
 	uint8_t riga_interna = world_y % 8;
 	uint8_t colonna_interna = world_x % 8;
 
-	// indice colore grezzo 0-3: la palette BGP si applica una sola volta in render_scanline
+	// raw color index 0-3: the BGP palette is applied only once in render_scanline
 	return get_tile_pixel(gb, tile_index, riga_interna, colonna_interna);
 }
 
@@ -179,7 +179,7 @@ void render_scanline(gameBoy* gb)
 				raw = get_tile_pixel_color(gb, i, LY);
 			}
 
-			  // indice grezzo 0-3
+			  // raw index 0-3
 			bg_idx[i] = raw;
 			gb->framebuffer[LY * 160 + i] = (bgp >> (raw * 2)) & 3;
 		}
@@ -209,12 +209,12 @@ void render_scanline(gameBoy* gb)
 			for (int j = 0; j < 8; j++) {
 				uint8_t col = !flipX ? j : 7 - j;
 				uint8_t color = pixel_color(lo, hi, col);
-				if (color == 0) continue;                        // trasparente
+				if (color == 0) continue;                        // transparent
 				int sx = x + j;
 				if (sx < 0 || sx >= 160) continue;
-				if (spr_x[sx] <= x) continue;                   // priorità DMG: X minore, a parità indice minore
+				if (spr_x[sx] <= x) continue;                   // DMG priority: X lower, with same index lower
 				spr_x[sx] = x;
-				if (priority && bg_idx[sx] != 0) continue;       // sprite dietro al BG
+				if (priority && bg_idx[sx] != 0) continue;       // sprite behind BG
 
 				gb->framebuffer[LY * 160 + sx] = (obp >> (color * 2)) & 3;
 			}
@@ -225,22 +225,22 @@ void render_scanline(gameBoy* gb)
 uint32_t convert_color(uint8_t color, int use_classic_green)
 {
 	if (use_classic_green) {
-		// Palette Game Boy (Verde)
+		// Game Boy Palette (Green)
 		switch (color) {
-		case 0: return 0xC4CFA1FF; // "Bianco"
-		case 1: return 0x8B966CFF; // Grigio chiaro
-		case 2: return 0x4C533CFF; // Grigio scuro
-		case 3: return 0x1F211AFF; // "Nero"
+		case 0: return 0xC4CFA1FF; // "White"
+		case 1: return 0x8B966CFF; // Light gray
+		case 2: return 0x4C533CFF; // Dark gray
+		case 3: return 0x1F211AFF; // "Black"
 		default: return 0xFFFFFFFF;
 		}
 	}
 	else {
-		// Palette Scala di grigi pura
+		// Pure grayscale palette
 		switch (color) {
-		case 0: return 0xE0E0E0FF; // Bianco puro
-		case 1: return 0x909090FF; // Grigio chiaro
-		case 2: return 0x404040FF; // Grigio scuro
-		case 3: return 0x101010FF; // Nero puro
+		case 0: return 0xE0E0E0FF; // Pure white
+		case 1: return 0x909090FF; // Light gray
+		case 2: return 0x404040FF; // Dark gray
+		case 3: return 0x101010FF; // Pure black
 		default: return 0xE0E0E0FF;
 		}
 	}
